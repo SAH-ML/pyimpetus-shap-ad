@@ -86,7 +86,7 @@ pyimpetus-shap-ad/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/[SAH-ML]/pyimpetus-shap-ad.git
+git clone https://github.com/SAH-ML/pyimpetus-shap-ad.git
 cd pyimpetus-shap-ad
 ```
 
