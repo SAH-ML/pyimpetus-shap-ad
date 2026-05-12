@@ -29,6 +29,10 @@ st.set_page_config(
     initial_sidebar_state = "expanded",
 )
 
+# ── Reset flag ─────────────────────────────────────────────────
+if "reset_trigger" not in st.session_state:
+    st.session_state.reset_trigger = False
+
 # ── Custom CSS ────────────────────────────────────────────────────
 st.markdown("""
 <style>
@@ -256,6 +260,12 @@ with st.sidebar:
     )
     st.markdown("---")
 
+    # ── Apply reset if triggered ──
+    if st.session_state.reset_trigger:
+        for probe_id in GENE_ORDER:
+            st.session_state[f"slider_{probe_id}"] = float(GENE_META[probe_id]["default"])
+        st.session_state.reset_trigger = False
+
     expr_vals = []
     for probe_id in GENE_ORDER:
         meta = GENE_META[probe_id]
@@ -294,14 +304,16 @@ with st.sidebar:
     st.markdown("---")
     predict_btn = st.button("🔮 Predict Cognitive Trajectory",
                              type="primary", use_container_width=True)
-    reset_btn   = st.button("↺ Reset to cohort means",
-                             use_container_width=True)
 
-    if reset_btn:
-        for probe_id in GENE_ORDER:
-            st.session_state.pop(f"slider_{probe_id}", None)
+    # ── Reset button with callback ──
+    def on_reset():
+        st.session_state.reset_trigger = True
         st.rerun()
-        
+
+    st.button("↺ Reset to cohort means",
+              on_click=on_reset,
+              use_container_width=True)
+
 # ── Main content ──────────────────────────────────────────────────
 col1, col2 = st.columns([1.1, 1], gap="large")
 
