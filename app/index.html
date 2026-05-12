@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AD Six-Gene Cognitive Decline Predictor</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
+  font-size:15px;line-height:1.6;background:#F5F6FA;color:#1a1a2e;min-height:100vh}
+
+.page{max-width:940px;margin:0 auto;padding:2rem 1rem 5rem}
+h1{font-size:22px;font-weight:500;color:#0C447C;margin-bottom:2px}
+.subtitle{font-size:13px;color:#888;margin-bottom:1.5rem}
+
+/* banner */
+.banner{background:#E6F1FB;border:1px solid #85B7EB;border-radius:8px;
+  padding:12px 16px;font-size:13px;color:#042C53;margin-bottom:1.5rem;line-height:1.6}
+.banner strong{font-weight:500}
+
+/* section heading */
+.sec-title{font-size:13px;font-weight:500;color:#666;text-transform:uppercase;
+  letter-spacing:.05em;margin-bottom:12px}
+
+/* gene cards */
+.gene-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));
+  gap:12px;margin-bottom:1.5rem}
+.card{background:#fff;border:1px solid #E2E2E2;border-radius:10px;padding:14px 16px}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
+.sym{font-size:15px;font-weight:500;color:#1a1a2e}
+.badge{font-size:11px;font-weight:500;padding:2px 9px;border-radius:6px}
+.b-harm{background:#FCEBEB;color:#A32D2D}
+.b-prot{background:#EAF3DE;color:#3B6D11}
+.gene-name{font-size:12px;color:#888;margin-bottom:3px;line-height:1.4}
+.probe-id{font-size:11px;color:#bbb;font-family:monospace;margin-bottom:10px}
+.slider-row{display:flex;align-items:center;gap:10px}
+input[type=range]{flex:1;-webkit-appearance:none;height:4px;border-radius:2px;
+  background:#D8D8D8;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;
+  border-radius:50%;background:#185FA5;cursor:pointer;
+  border:2px solid #fff;box-shadow:0 0 0 1px #185FA5}
+.slider-val{font-size:14px;font-weight:500;min-width:42px;text-align:right}
+.range-hint{font-size:11px;color:#bbb;margin-top:5px}
+.warn-msg{font-size:11px;color:#854F0B;margin-top:4px;background:#FAEEDA;
+  padding:3px 8px;border-radius:4px;display:none}
+
+/* buttons */
+.btn-row{display:flex;gap:12px;margin-bottom:1.5rem;flex-wrap:wrap}
+.btn-primary{background:#185FA5;color:#fff;border:none;border-radius:8px;
+  padding:11px 28px;font-size:14px;font-weight:500;cursor:pointer;transition:background .15s}
+.btn-primary:hover{background:#0C447C}
+.btn-primary:disabled{background:#aaa;cursor:not-allowed}
+.btn-secondary{background:#fff;color:#555;border:1px solid #CCC;
+  border-radius:8px;padding:11px 20px;font-size:14px;cursor:pointer}
+.btn-secondary:hover{background:#f5f5f5}
+
+/* loading */
+#loading{display:none;font-size:13px;color:#185FA5;padding:8px 0;
+  align-items:center;gap:8px}
+.spinner{width:16px;height:16px;border:2px solid #C0D4EA;
+  border-top-color:#185FA5;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* global warning */
+#global-warn{background:#FAEEDA;border:1px solid #EF9F27;border-radius:8px;
+  padding:10px 14px;font-size:13px;color:#412402;margin-bottom:1rem;display:none}
+
+/* error */
+#error-box{background:#FCEBEB;border:1px solid #F09595;border-radius:8px;
+  padding:10px 14px;font-size:13px;color:#501313;margin-bottom:1rem;display:none}
+
+/* results */
+#results{display:none}
+.risk-banner{border-radius:10px;padding:16px 20px;margin-bottom:1.25rem;border:1px solid}
+.r-high{background:#FCEBEB;border-color:#F09595;color:#501313}
+.r-mod {background:#FAEEDA;border-color:#FAC775;color:#412402}
+.r-low {background:#E6F1FB;border-color:#85B7EB;color:#042C53}
+.risk-cat {font-size:19px;font-weight:500;margin-bottom:4px}
+.risk-nums{font-size:13px;margin-bottom:8px;opacity:.85}
+.risk-desc{font-size:14px;line-height:1.6;margin-bottom:8px}
+.risk-mon {font-size:13px;font-weight:500}
+
+/* metric cards */
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1.25rem}
+.metric{background:#fff;border:1px solid #E8E8E8;border-radius:8px;
+  padding:14px;text-align:center}
+.metric-label{font-size:12px;color:#888;margin-bottom:4px}
+.metric-val{font-size:22px;font-weight:500;color:#1a1a2e}
+
+/* contribution bars */
+.contrib-card{background:#fff;border:1px solid #E8E8E8;border-radius:10px;
+  padding:16px 18px;margin-bottom:1.25rem}
+.contrib-head{font-size:14px;font-weight:500;margin-bottom:10px}
+.legend{display:flex;gap:16px;margin-bottom:14px}
+.leg-i{display:flex;align-items:center;gap:6px;font-size:12px;color:#888}
+.leg-dot{width:10px;height:10px;border-radius:50%}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.bar-sym{font-size:13px;font-weight:500;width:54px;color:#1a1a2e}
+.bar-track{flex:1;height:14px;background:#F0F0F0;border-radius:7px;overflow:hidden}
+.bar-fill{height:100%;border-radius:7px;transition:width .5s ease}
+.bfill-harm{background:#E24B4A}
+.bfill-prot{background:#378ADD}
+.bar-num{font-size:12px;width:58px;text-align:right;color:#888}
+.bar-dir{font-size:11px;width:108px;color:#aaa}
+.bar-role{font-size:11px;width:68px;color:#bbb}
+
+/* JSON boxes */
+.json-box{background:#F5F6FA;border:1px solid #E0E0E0;
+  border-radius:8px;padding:12px 14px;margin-bottom:1rem}
+.json-label{font-size:11px;font-weight:500;color:#888;margin-bottom:6px;
+  text-transform:uppercase;letter-spacing:.05em}
+.json-pre{font-family:'Courier New',monospace;font-size:11.5px;color:#1a1a2e;
+  white-space:pre;overflow-x:auto;line-height:1.7;max-height:340px;overflow-y:auto}
+
+/* disclaimer */
+.disclaimer{background:#FAEEDA;border:1px solid #FAC775;border-radius:8px;
+  padding:12px 16px;font-size:12px;color:#412402;margin-top:1.25rem;line-height:1.6}
+.disclaimer strong{font-weight:500}
+
+@media(max-width:600px){
+  .metrics{grid-template-columns:1fr}
+  .gene-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1>AD Six-Gene Cognitive Decline Predictor</h1>
+  <p class="subtitle">Research prototype &nbsp;|&nbsp; King Abdulaziz University, Department of Computer Science</p>
+
+  <!-- Clinical instructions banner -->
+  <div class="banner">
+    <strong>Clinical input protocol:</strong>
+    Enter log<sub>2</sub> RMA-normalised expression values from Affymetrix HG-U219 array.
+    Values outside the displayed typical ranges will trigger a calibration warning.
+    All values are in log<sub>2</sub> arbitrary units.
+    Adjust each slider to match the patient's array expression value for that probe,
+    then click <em>Predict cognitive trajectory</em>.
+    The form submits data as JSON to the prediction API and displays the structured response.
+  </div>
+
+  <!-- Gene expression sliders -->
+  <div class="sec-title">Gene expression input (6 probes)</div>
+  <div class="gene-grid" id="gene-grid"></div>
+
+  <!-- Buttons -->
+  <div class="btn-row">
+    <button class="btn-primary" id="btn-predict" onclick="runPredict()">
+      &#x1F9E0;&nbsp; Predict cognitive trajectory
+    </button>
+    <button class="btn-secondary" onclick="resetAll()">
+      &#x21BA;&nbsp; Reset to defaults
+    </button>
+  </div>
+
+  <!-- Loading indicator -->
+  <div id="loading" style="display:flex">
+    <div class="spinner"></div>
+    <span>Calling prediction API&hellip;</span>
+  </div>
+
+  <!-- Error box -->
+  <div id="error-box"></div>
+
+  <!-- Calibration warnings -->
+  <div id="global-warn"></div>
+
+  <!-- Request JSON -->
+  <div class="json-box" id="req-box" style="display:none">
+    <div class="json-label">JSON sent &rarr; POST /predict</div>
+    <pre class="json-pre" id="req-pre"></pre>
+  </div>
+
+  <!-- Results section -->
+  <div id="results">
+
+    <!-- Risk banner -->
+    <div class="risk-banner" id="risk-banner">
+      <div class="risk-cat"  id="risk-cat"></div>
+      <div class="risk-nums" id="risk-nums"></div>
+      <div class="risk-desc" id="risk-desc"></div>
+      <div class="risk-mon"  id="risk-mon"></div>
+    </div>
+
+    <!-- Metric summary cards -->
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-label">Predicted ΔMMSE (12-month)</div>
+        <div class="metric-val" id="m-delta">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Composite risk score</div>
+        <div class="metric-val" id="m-score">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Risk category</div>
+        <div class="metric-val" id="m-cat">—</div>
+      </div>
+    </div>
+
+    <!-- Per-gene contribution bars -->
+    <div class="contrib-card">
+      <div class="contrib-head">Per-gene contribution to composite risk score</div>
+      <div class="legend">
+        <div class="leg-i">
+          <div class="leg-dot" style="background:#E24B4A"></div>
+          Increasing risk (harmful gene elevated)
+        </div>
+        <div class="leg-i">
+          <div class="leg-dot" style="background:#378ADD"></div>
+          Decreasing risk (protective gene active)
+        </div>
+      </div>
+      <div id="bar-container"></div>
+    </div>
+
+    <!-- Response JSON -->
+    <div class="json-box">
+      <div class="json-label">JSON response &larr; /predict</div>
+      <pre class="json-pre" id="resp-pre"></pre>
+    </div>
+
+    <div class="disclaimer">
+      <strong>Research prototype only.</strong>
+      This tool is not validated for clinical use or regulatory approval.
+      Model trained on ADNI-GO (n=96, LOOCV MAE=1.39, R&sup2;=0.25).
+      SNX5 cross-platform replication in AddNeuroMed GSE63060 (p=0.002).
+      External longitudinal validation in independent cohorts is required
+      before clinical deployment. All predictions must be interpreted
+      in conjunction with clinical judgement.
+    </div>
+
+  </div><!-- /results -->
+</div><!-- /page -->
+
+<script>
+// ── Backend URL — change to your server address when deploying ────
+const API_URL = 'http://localhost:5000';
+
+// ── Gene definitions — ORDER MATCHES six_gene_model.pkl ──────────
+const GENES = [
+  {probe:"11762936_x_at", sym:"AQP7",   name:"Aquaporin 7",
+   role:"harmful",   coef:-0.598, min:2.50, max:5.50,  def:3.75, lo:3.25, hi:4.25},
+
+  {probe:"200024_PM_at",  sym:"RPS5",   name:"Ribosomal Protein S5",
+   role:"harmful",   coef:-0.447, min:9.50, max:13.00, def:11.25,lo:10.7, hi:11.8},
+
+  {probe:"11762358_at",   sym:"CHD2",
+   name:"Chromodomain Helicase DNA Binding Protein 2",
+   role:"harmful",   coef:-0.293, min:6.00, max:11.00, def:8.25, lo:7.5,  hi:9.0},
+
+  {probe:"11763188_a_at", sym:"SNX5",   name:"Sorting Nexin 5 (retromer)",
+   role:"protective",coef:+0.441, min:6.00, max:10.00, def:8.30, lo:7.8,  hi:8.8},
+
+  {probe:"11757278_x_at", sym:"ASS1",   name:"Argininosuccinate Synthase 1",
+   role:"harmful",   coef:-0.328, min:5.00, max:10.00, def:7.50, lo:6.5,  hi:8.5},
+
+  {probe:"11764118_at",   sym:"Unchar", name:"Uncharacterised lncRNA (chr12q15)",
+   role:"harmful",   coef:-0.462, min:2.00, max:7.00,  def:4.00, lo:3.0,  hi:5.0},
+];
+
+// ── Build slider cards ────────────────────────────────────────────
+function buildGrid() {
+  const grid = document.getElementById('gene-grid');
+  GENES.forEach((g, i) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-head">
+        <span class="sym">${g.sym}</span>
+        <span class="badge ${g.role==='harmful'?'b-harm':'b-prot'}">${g.role}</span>
+      </div>
+      <div class="gene-name">${g.name}</div>
+      <div class="probe-id">Probe: ${g.probe} &nbsp;|&nbsp; EN coef: ${g.coef}</div>
+      <div class="slider-row">
+        <input type="range" id="sl_${i}"
+               min="${g.min}" max="${g.max}" step="0.01" value="${g.def}"
+               oninput="onSlide(${i})">
+        <span class="slider-val" id="sv_${i}">${g.def.toFixed(2)}</span>
+      </div>
+      <div class="range-hint">Typical range: ${g.lo} – ${g.hi} &nbsp;log₂ AU</div>
+      <div class="warn-msg" id="wm_${i}">
+        ⚠ Value outside typical range — check assay calibration
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function onSlide(i) {
+  const val = parseFloat(document.getElementById('sl_' + i).value);
+  document.getElementById('sv_' + i).textContent = val.toFixed(2);
+  const g  = GENES[i];
+  const wm = document.getElementById('wm_' + i);
+  wm.style.display = (val < g.lo - 2 || val > g.hi + 2) ? 'block' : 'none';
+}
+
+function getValues() {
+  return GENES.map((_, i) => parseFloat(document.getElementById('sl_' + i).value));
+}
+
+// ── Main prediction — calls Flask backend ─────────────────────────
+async function runPredict() {
+  const rawVals = getValues();
+
+  // Build request payload — expression in GENE_ORDER sequence
+  const payload = {
+    expression: rawVals.map(v => parseFloat(v.toFixed(4))),
+    gene_order:  GENES.map(g => g.probe)
+  };
+
+  // Show request JSON immediately
+  document.getElementById('req-pre').textContent =
+    JSON.stringify(payload, null, 2);
+  document.getElementById('req-box').style.display = 'block';
+
+  // Show loading, hide previous results and errors
+  setLoading(true);
+  document.getElementById('error-box').style.display  = 'none';
+  document.getElementById('global-warn').style.display = 'none';
+  document.getElementById('results').style.display    = 'none';
+
+  try {
+    const res = await fetch(`${API_URL}/predict`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({error: `HTTP ${res.status}`}));
+      throw new Error(err.error || `Server error ${res.status}`);
+    }
+
+    const data = await res.json();
+    setLoading(false);
+    renderResults(data);
+
+  } catch (err) {
+    setLoading(false);
+    showError('API error: ' + err.message +
+      '. Is the Flask backend running on ' + API_URL + '?');
+  }
+}
+
+// ── Render full results from backend response ─────────────────────
+function renderResults(data) {
+
+  // ── Calibration warnings ────────────────────────────────────
+  const gw = document.getElementById('global-warn');
+  if (data.calibration_warnings && data.calibration_warnings.length > 0) {
+    gw.style.display = 'block';
+    gw.textContent   = '⚠ Calibration warnings: '
+                     + data.calibration_warnings.join('; ');
+  }
+
+  // ── Response JSON ────────────────────────────────────────────
+  document.getElementById('resp-pre').textContent =
+    JSON.stringify(data, null, 2);
+
+  // ── Risk banner ──────────────────────────────────────────────
+  const rs     = data.risk_stratification;
+  const clsMap = {HIGH:'r-high', MODERATE:'r-mod', LOW:'r-low'};
+  const banner = document.getElementById('risk-banner');
+  banner.className = 'risk-banner ' + (clsMap[rs.code] || 'r-low');
+  document.getElementById('risk-cat').textContent = rs.category;
+  document.getElementById('risk-nums').textContent =
+    'Predicted 12-month ΔMMSE: ' + data.predicted_delta_mmse.toFixed(2) +
+    '   |   Composite risk score: ' + data.composite_risk_score.toFixed(3);
+  document.getElementById('risk-desc').textContent = rs.description;
+  document.getElementById('risk-mon').textContent  = rs.monitoring;
+
+  // ── Metric cards ─────────────────────────────────────────────
+  document.getElementById('m-delta').textContent =
+    data.predicted_delta_mmse.toFixed(2);
+  document.getElementById('m-score').textContent =
+    data.composite_risk_score.toFixed(3);
+  document.getElementById('m-cat').textContent   =
+    rs.category.split(' ')[0];
+
+  // ── Contribution bars ────────────────────────────────────────
+  const contribs  = data.gene_contributions;
+  const maxAbs    = Math.max(
+    ...contribs.map(c => Math.abs(c.contribution)), 0.001
+  );
+  const container = document.getElementById('bar-container');
+  container.innerHTML = '';
+  contribs.forEach(c => {
+    const pct   = (Math.abs(c.contribution) / maxAbs * 100).toFixed(1);
+    const isNeg = c.contribution < 0;
+    const row   = document.createElement('div');
+    row.className = 'bar-row';
+    row.innerHTML = `
+      <span class="bar-sym">${c.symbol}</span>
+      <div class="bar-track">
+        <div class="bar-fill ${isNeg ? 'bfill-harm' : 'bfill-prot'}"
+             style="width:${pct}%"></div>
+      </div>
+      <span class="bar-num">${c.contribution.toFixed(3)}</span>
+      <span class="bar-dir">${c.direction}</span>
+      <span class="bar-role">${c.role}</span>
+    `;
+    container.appendChild(row);
+  });
+
+  // ── Show results ─────────────────────────────────────────────
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('results').scrollIntoView(
+    {behavior:'smooth', block:'start'}
+  );
+}
+
+// ── Helpers ───────────────────────────────────────────────────────
+function setLoading(on) {
+  document.getElementById('loading').style.display = on ? 'flex' : 'none';
+  document.getElementById('btn-predict').disabled  = on;
+}
+
+function showError(msg) {
+  const box = document.getElementById('error-box');
+  box.style.display = 'block';
+  box.textContent   = '✗ ' + msg;
+}
+
+function resetAll() {
+  GENES.forEach((g, i) => {
+    document.getElementById('sl_' + i).value = g.def;
+    document.getElementById('sv_' + i).textContent = g.def.toFixed(2);
+    document.getElementById('wm_' + i).style.display = 'none';
+  });
+  document.getElementById('results').style.display     = 'none';
+  document.getElementById('req-box').style.display      = 'none';
+  document.getElementById('error-box').style.display    = 'none';
+  document.getElementById('global-warn').style.display  = 'none';
+  document.getElementById('loading').style.display      = 'none';
+}
+
+buildGrid();
+</script>
+</body>
+</html>
