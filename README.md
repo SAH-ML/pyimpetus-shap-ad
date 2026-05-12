@@ -184,7 +184,7 @@ Outputs: `csf_concordance_results.csv`, `csf_plots.pdf`, `concordance_summary.tx
 ```
 A fully interactive prototype is deployed online:
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-Streamlit-FF4B4B)](https://pyimpetus-shap-ad.streamlit.app/)
+[https://img.shields.io/badge/Live%20Demo-Streamlit-FF4B4B](https://pyimpetus-shap-ad.streamlit.app/)
 
 Use the sliders to adjust the six probe expression values and instantly receive a predicted cognitive trajectory (ΔMMSE), risk stratification, and SHAP contributions.
 
