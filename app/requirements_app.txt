@@ -1,25 +1,9 @@
-# PyImpetus-SHAP Pipeline — Python dependencies
-# Python 3.10+ required
+# PyImpetus-SHAP Streamlit App — minimal dependencies
+# Python 3.10+
 
-# Core data science
+streamlit>=1.32.0
 pandas>=2.0.0
 numpy>=1.26.0
-scipy>=1.11.0
-
-# Machine learning
 scikit-learn==1.5.0
-PyImpetus>=0.5.0
-
-# Explainability
-shap>=0.44.0
-
-# Model persistence
 joblib>=1.4.0
-
-# Visualisation
 matplotlib>=3.8.0
-seaborn>=0.13.0
-Pillow>=10.0.0
-
-# Web application
-streamlit>=1.32.0
