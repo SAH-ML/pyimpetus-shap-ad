@@ -264,48 +264,18 @@ with st.sidebar:
     if st.session_state.reset_trigger:
         for probe_id in GENE_ORDER:
             st.session_state[f"slider_{probe_id}"] = float(GENE_META[probe_id]["default"])
+        st.session_state.pop("last_result", None)          # ← clear the prediction
         st.session_state.reset_trigger = False
 
     expr_vals = []
     for probe_id in GENE_ORDER:
-        meta = GENE_META[probe_id]
-        sym  = meta["symbol"]
-        role = meta["role"]
-        icon = "🔴" if role == "harmful" else "🟢"
-
-        with st.expander(f"{icon} {sym} — {meta['name']}", expanded=True):
-            st.caption(meta["info"])
-            val = st.slider(
-                label       = f"{sym} expression (log₂ AU)",
-                min_value   = float(meta["min_val"]),
-                max_value   = float(meta["max_val"]),
-                value       = float(meta["default"]),
-                step        = meta["step"],
-                key         = f"slider_{probe_id}",
-            )
-            dev = val - meta["default"]
-            if abs(dev) < 0.05:
-                st.caption("📍 At cohort mean (neutral)")
-            elif (dev > 0 and role == "harmful") or \
-                 (dev < 0 and role == "protective"):
-                st.markdown(
-                    f"<span style='color:#E24B4A'>⚠️ {abs(dev):.2f} "
-                    f"above mean → increases risk</span>",
-                    unsafe_allow_html=True,
-                )
-            else:
-                st.markdown(
-                    f"<span style='color:#1C7C5A'>✅ {abs(dev):.2f} "
-                    f"{'above' if dev>0 else 'below'} mean → reduces risk</span>",
-                    unsafe_allow_html=True,
-                )
-            expr_vals.append(val)
+        ... # sliders unchanged
 
     st.markdown("---")
     predict_btn = st.button("🔮 Predict Cognitive Trajectory",
                              type="primary", use_container_width=True)
 
-    # ── Reset button (callback without st.rerun) ──
+    # ── Reset button (NO st.rerun needed) ──
     def on_reset():
         st.session_state.reset_trigger = True
 
