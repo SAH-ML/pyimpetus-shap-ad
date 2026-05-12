@@ -305,10 +305,9 @@ with st.sidebar:
     predict_btn = st.button("🔮 Predict Cognitive Trajectory",
                              type="primary", use_container_width=True)
 
-    # ── Reset button with callback ──
+    # ── Reset button (callback without st.rerun) ──
     def on_reset():
         st.session_state.reset_trigger = True
-        st.rerun()
 
     st.button("↺ Reset to cohort means",
               on_click=on_reset,
