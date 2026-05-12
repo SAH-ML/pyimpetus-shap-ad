@@ -376,7 +376,7 @@ SHAP bars show each probe's contribution:
 with col2:
     st.markdown("### 🎯 Prediction Result")
 
-if predict_btn or "last_result" in st.session_state:
+    if predict_btn or "last_result" in st.session_state:
         result = predict_from_expression(expr_vals)
         st.session_state["last_result"] = result
         risk   = get_risk(result["delta_mmse"])
@@ -439,7 +439,7 @@ if predict_btn or "last_result" in st.session_state:
         df_disp = pd.DataFrame(rows)
         st.dataframe(df_disp, use_container_width=True, hide_index=True)
 
-    else:
+   else:
         st.info(
             "👈 Adjust the gene expression sliders in the sidebar "
             "and click **Predict Cognitive Trajectory** to see the result."
