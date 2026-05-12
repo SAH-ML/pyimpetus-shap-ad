@@ -177,7 +177,7 @@ def predict_from_expression(expr_values: list) -> dict:
         delta_mmse = float(np.dot(X_scaled, coefs))
         delta_mmse = max(-30.0, min(10.0, delta_mmse))  # clamp to MMSE range
 
-    coefs  = np.array([GENE_META[p]["coef"] for p in GENE_ORDER])
+    coefs    = np.array([GENE_META[p]["coef"] for p in GENE_ORDER])
     contribs = X_scaled * coefs
 
     return {
@@ -272,7 +272,7 @@ with st.sidebar:
     if st.session_state.reset_trigger:
         for probe_id in GENE_ORDER:
             st.session_state[f"slider_{probe_id}"] = float(GENE_META[probe_id]["default"])
-        st.session_state.pop("last_result", None)          # ← clear the prediction
+        st.session_state.pop("last_result", None)
         st.session_state.reset_trigger = False
 
     expr_vals = []
@@ -290,7 +290,7 @@ with st.sidebar:
                 max_value   = float(meta["max_val"]),
                 value       = float(meta["default"]),
                 step        = meta["step"],
-                format      = "%.2f",      # ← force two decimals
+                format      = "%.2f",
                 key         = f"slider_{probe_id}",
             )
             dev = val - meta["default"]
@@ -315,7 +315,7 @@ with st.sidebar:
     predict_btn = st.button("🔮 Predict Cognitive Trajectory",
                              type="primary", use_container_width=True)
 
-    # ── Reset button (NO st.rerun needed) ──
+    # ── Reset button ──
     def on_reset():
         st.session_state.reset_trigger = True
 
@@ -353,7 +353,7 @@ with col1:
         sym  = meta["symbol"]
         role = meta["role"]
         coef = meta["coef"]
-        tag  = "🔴 Harmful"  if role == "harmful" else "🟢 Protective"
+        tag  = "🔴 Harmful" if role == "harmful" else "🟢 Protective"
         st.markdown(
             f"**{sym}** &nbsp;|&nbsp; Coef: `{coef:+.3f}` &nbsp;|&nbsp; {tag}  \n"
             f"<small>{meta['name']}</small>",
@@ -393,7 +393,7 @@ with col2:
                 "boundary of the training data range. Predictions beyond the "
                 "ADNI-GO cohort distribution should be interpreted with caution."
             )
-        
+
         # Risk category card
         cls = f"risk-{risk['code']}"
         st.markdown(
@@ -421,25 +421,25 @@ with col2:
         st.markdown("#### Detailed SHAP Contributions")
         rows = []
         for probe_id in GENE_ORDER:
-            meta   = GENE_META[probe_id]
-            sym    = meta["symbol"]
-            raw    = expr_vals[GENE_ORDER.index(probe_id)]
-            scaled = result["scaled_values"][sym]
+            meta    = GENE_META[probe_id]
+            sym     = meta["symbol"]
+            raw     = expr_vals[GENE_ORDER.index(probe_id)]
+            scaled  = result["scaled_values"][sym]
             contrib = result["contributions"][sym]
             rows.append({
-                "Gene":        sym,
-                "Role":        meta["role"].capitalize(),
-                "Raw value":   f"{raw:.3f}",
-                "Scaled (z)":  f"{scaled:+.3f}",
-                "SHAP contrib":f"{contrib:+.4f}",
-                "Direction":   "↑ Risk" if contrib < 0 else "↓ Risk",
+                "Gene":         sym,
+                "Role":         meta["role"].capitalize(),
+                "Raw value":    f"{raw:.3f}",
+                "Scaled (z)":   f"{scaled:+.3f}",
+                "SHAP contrib": f"{contrib:+.4f}",
+                "Direction":    "↑ Risk" if contrib < 0 else "↓ Risk",
             })
 
         import pandas as pd
         df_disp = pd.DataFrame(rows)
         st.dataframe(df_disp, use_container_width=True, hide_index=True)
 
-   else:
+    else:
         st.info(
             "👈 Adjust the gene expression sliders in the sidebar "
             "and click **Predict Cognitive Trajectory** to see the result."
