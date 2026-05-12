@@ -299,10 +299,9 @@ with st.sidebar:
 
     if reset_btn:
         for probe_id in GENE_ORDER:
-            st.session_state[f"slider_{probe_id}"] = \
-                float(GENE_META[probe_id]["default"])
+            st.session_state.pop(f"slider_{probe_id}", None)
         st.rerun()
-
+        
 # ── Main content ──────────────────────────────────────────────────
 col1, col2 = st.columns([1.1, 1], gap="large")
 
