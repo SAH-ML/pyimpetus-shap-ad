@@ -28,7 +28,13 @@ Step 3 — Elastic Net regression + LOOCV + subgroup analysis   (03_model_traini
        ↓  LOOCV MAE = 1.388 | R² = 0.247
 Step 4 — SHAP LinearExplainer + figures   (04_shap_analysis.py)
        ↓
-Step 5 — Prototype clinical REST API   (app/app.py + app/index.html)
+Step 5 — Cell-type deconvolution (MCP-counter)   (05_cell_type_deconvolution.py)
+       ↓
+Step 6 — Cross-platform validation (AddNeuroMed)   (06_cross_platform_validation.py)
+       ↓
+Step 7 — CSF biomarker concordance analysis   (07_csf_concordance.py)
+       ↓
+Step 8 — Interactive clinical decision support tool   (app/streamlit_app.py – deployed live)
 ```
 
 ### Key results
@@ -63,14 +69,18 @@ pyimpetus-shap-ad/
 ├── 02_feature_selection.py      # PyImpetus Markov Blanket experiments (Step 2)
 ├── 03_model_training.py         # Elastic Net training, LOOCV, subgroups (Step 3)
 ├── 04_shap_analysis.py          # SHAP values, Fig 4 & Fig 5 (Step 4)
+├── 05_cell_type_deconvolution.py   # MCP-counter deconvolution analysis
+├── 06_cross_platform_validation.py # AddNeuroMed cross-platform validation
+├── 07_csf_concordance.py           # CSF biomarker concordance analysis
 │
-├── six_gene_order.json          # Probe order for model input (CRITICAL)
-├── six_gene_model.pkl           # Trained pipeline (StandardScaler + ElasticNet)
+├── six_gene_order.json         # Probe order for model input
+├── six_gene_model.pkl          # Trained pipeline (StandardScaler + ElasticNet)
 │
 ├── app/
-│   ├── app.py                   # Flask REST API backend
-│   ├── index.html               # HTML/JS clinical decision support frontend
-│   └── requirements_app.txt     # App-specific dependencies
+│   ├── streamlit_app.py        # Interactive Streamlit clinical tool
+│   ├── six_gene_model.pkl      # Model for the live demo
+│   ├── six_gene_order.json     # Probe order (redundant, kept for completeness)
+│   └── requirements_app.txt    # Minimal dependencies for the Streamlit app
 │
 ├── requirements.txt             # Full analysis dependencies
 ├── LICENSE                      # MIT License
@@ -116,7 +126,7 @@ Run the four steps in order. Each script is self-contained and saves its outputs
 python 01_data_preparation.py
 ```
 
-Place all ADNI CSV files in the same directory before running. Output: `ADNI_Gene_Expression_Final_96_clean.csv`
+Place all ADNI CSV files in the same directory before running. Output: ADNI_Gene_Expression_Final_96_clean.csv`
 
 ### Step 2 — Feature selection (four experiments)
 
@@ -143,49 +153,63 @@ Outputs: `six_gene_model.pkl`, `loocv_results.csv`, `cv_results.csv`, `subgroup_
 ### Step 4 — SHAP analysis and figures
 
 ```bash
-python 04_shap_analysis.py
+python 05_cell_type_deconvolution.py
 ```
 
 Outputs: `Fig4_SHAP_Analysis.jpg/.pdf`, `Fig5_Coeff_Heatmap.jpg/.pdf`, `shap_values.csv`
 
+### Step 5 — Cell-type deconvolution
+
+```bash
+python 04_shap_analysis.py
+```
+Outputs: `mcp_counter_deconvolution_results.csv`, `cell_type_correlations.pdf`, `deconvolution_summary.txt`
+
+### Step 6 — Cross-platform validation
+
+```bash
+python 06_cross_platform_validation.py
+```
+Outputs: `addneuromed_validation_results.csv`, `cross_platform_plot.pdf`, `validation_summary.txt`
+
+### Step 7 — CSF biomarker concordance
+
+```bash
+python 07_csf_concordance.py
+```
+Outputs: `csf_concordance_results.csv`, `csf_plots.pdf`, `concordance_summary.txt`
 ---
 
-## Clinical decision support tool (prototype)
+## Clinical decision support tool (Streamlit – live demo)
+```
+A fully interactive prototype is deployed online:
 
-### Start the backend
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Streamlit-FF4B4B)](https://pyimpetus-shap-ad.streamlit.app/)
+
+Use the sliders to adjust the six probe expression values and instantly receive a predicted cognitive trajectory (ΔMMSE), risk stratification, and SHAP contributions.
+
+```
+### Run on your own computer
 
 ```bash
 cd app
 pip install -r requirements_app.txt
-python app.py
-# → Running on http://0.0.0.0:5000
+streamlit run streamlit_app.py
+```
+```
+The app will open in your browser. Its interface includes:
+
+Gene expression sliders with real-time risk feedback
+
+Predicted ΔMMSE with high/moderate/low risk classification
+
+SHAP contribution bar chart for each probe
+
+Detailed numerical table of scaled values and SHAP contributions
 ```
 
-### Open the frontend
-
-Open `app/index.html` in any browser. Enter the six probe expression values using the sliders and click **Predict cognitive trajectory**.
-
-### API reference
-
-**POST** `/predict`
-
-Request body:
-```json
-{
-    "expression": [3.85, 11.20, 8.10, 8.20, 7.40, 4.10]
-}
-```
-Values must be in the probe order defined in `six_gene_order.json`:
-`[11762936_x_at, 200024_PM_at, 11762358_at, 11763188_a_at, 11757278_x_at, 11764118_at]`
-
-Response includes: `predicted_delta_mmse`, `composite_risk_score`, `risk_stratification` (High/Moderate/Low with clinical recommendation), `gene_contributions` (per-probe SHAP), `calibration_warnings`.
-
-**GET** `/gene_info` — Returns probe metadata and typical expression ranges.
-
-**GET** `/health` — Returns model load status.
-
+---
 > **Disclaimer:** This prototype is for research demonstration only. It is not validated for clinical use or regulatory approval. External longitudinal validation is required before any clinical deployment.
-
 ---
 
 ## Input data requirements
