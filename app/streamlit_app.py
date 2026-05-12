@@ -152,10 +152,10 @@ def predict_from_expression(expr_values: list) -> dict:
     """
     X = np.array(expr_values, dtype=float).reshape(1, -1)
 
-if model is not None:
-    delta_mmse = float(model.predict(X)[0])
-    scaler     = model[0]
-    X_scaled   = scaler.transform(X)[0]
+    if model is not None:
+        delta_mmse = float(model.predict(X)[0])
+        scaler     = model[0]                # first step = StandardScaler
+        X_scaled   = scaler.transform(X)[0]
     else:
         # Manual standardisation using cohort parameters
         X_scaled   = np.array([
