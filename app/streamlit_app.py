@@ -164,6 +164,7 @@ def predict_from_expression(expr_values: list) -> dict:
 
     if model is not None:
         delta_mmse = float(model.predict(X)[0])
+        delta_mmse = max(-30.0, min(10.0, delta_mmse))  # clamp to MMSE range
         scaler     = model[0]                # first step = StandardScaler
         X_scaled   = scaler.transform(X)[0]
     else:
@@ -174,6 +175,7 @@ def predict_from_expression(expr_values: list) -> dict:
         ])
         coefs      = np.array([GENE_META[p]["coef"] for p in GENE_ORDER])
         delta_mmse = float(np.dot(X_scaled, coefs))
+        delta_mmse = max(-30.0, min(10.0, delta_mmse))  # clamp to MMSE range
 
     coefs  = np.array([GENE_META[p]["coef"] for p in GENE_ORDER])
     contribs = X_scaled * coefs
@@ -374,11 +376,24 @@ SHAP bars show each probe's contribution:
 with col2:
     st.markdown("### 🎯 Prediction Result")
 
-    if predict_btn or "last_result" in st.session_state:
+if predict_btn or "last_result" in st.session_state:
         result = predict_from_expression(expr_vals)
         st.session_state["last_result"] = result
         risk   = get_risk(result["delta_mmse"])
 
+        # Warn if any value is at slider extreme (outside training range)
+        at_extreme = any(
+            expr_vals[i] >= GENE_META[p]["max_val"] or
+            expr_vals[i] <= GENE_META[p]["min_val"]
+            for i, p in enumerate(GENE_ORDER)
+        )
+        if at_extreme:
+            st.warning(
+                "⚠️ **Extrapolation Warning:** One or more gene values are at the "
+                "boundary of the training data range. Predictions beyond the "
+                "ADNI-GO cohort distribution should be interpreted with caution."
+            )
+        
         # Risk category card
         cls = f"risk-{risk['code']}"
         st.markdown(
