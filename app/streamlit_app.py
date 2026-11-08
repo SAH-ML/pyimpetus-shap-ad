@@ -82,7 +82,7 @@ GENE_META = {
         "name":     "Aquaporin 7",
         "role":     "harmful",
         "coef":     -0.598,
-        "min_val":  2.5, "max_val": 5.5, "default": 3.75,
+        "min_val":  2.90, "max_val": 4.39, "default": 3.64,
         "step":     0.01,
         "info":     "Glycerol/water channel; glymphatic & metabolic regulation. "
                     "Higher expression → faster cognitive decline.",
@@ -92,7 +92,7 @@ GENE_META = {
         "name":     "Ribosomal Protein S5",
         "role":     "harmful",
         "coef":     -0.447,
-        "min_val":  9.5, "max_val": 13.0, "default": 11.25,
+        "min_val":  10.59, "max_val": 11.98, "default": 11.28,
         "step":     0.01,
         "info":     "40S ribosomal protein; tau mRNA translation & "
                     "ribosomal stress in AD.",
@@ -102,7 +102,7 @@ GENE_META = {
         "name":     "Chromodomain Helicase DNA-Binding Protein 2",
         "role":     "harmful",
         "coef":     -0.293,
-        "min_val":  6.0, "max_val": 11.0, "default": 8.25,
+        "min_val":  1.70, "max_val": 3.13, "default": 2.41,
         "step":     0.01,
         "info":     "Epigenetic chromatin remodeller; dysregulated in "
                     "microglial AD pathology.",
@@ -112,7 +112,7 @@ GENE_META = {
         "name":     "Sorting Nexin 5 (retromer component)",
         "role":     "protective",
         "coef":     +0.441,
-        "min_val":  6.0, "max_val": 10.0, "default": 8.30,
+        "min_val":  2.64, "max_val": 5.36, "default": 4.00,
         "step":     0.01,
         "info":     "Retromer trafficking of APP/BACE1. "
                     "Higher expression → slower decline (PROTECTIVE). "
@@ -123,7 +123,7 @@ GENE_META = {
         "name":     "Argininosuccinate Synthase 1",
         "role":     "harmful",
         "coef":     -0.328,
-        "min_val":  5.0, "max_val": 10.0, "default": 7.50,
+        "min_val":  2.47, "max_val": 3.52, "default": 3.00,
         "step":     0.01,
         "info":     "Urea cycle & nitric oxide synthesis; arginine "
                     "metabolism dysregulated in AD.",
@@ -133,16 +133,15 @@ GENE_META = {
         "name":     "Uncharacterised transcript (chr12q15)",
         "role":     "harmful",
         "coef":     -0.462,
-        "min_val":  2.0, "max_val": 7.0, "default": 4.00,
+        "min_val":  2.04, "max_val": 3.05, "default": 2.55,
         "step":     0.01,
         "info":     "Putative lncRNA; no HGNC symbol. "
                     "Biological function unknown — requires RNA-seq validation.",
     },
 }
 
-COHORT_MEANS = {p: GENE_META[p]["default"] for p in GENE_ORDER}
-COHORT_SDS   = {p: (GENE_META[p]["max_val"] - GENE_META[p]["min_val"]) / 6
-                for p in GENE_ORDER}
+# COHORT_MEANS / COHORT_SDS are defined just after the model loads
+# (see below), so they can be synced from the model's own scaler.
 
 # ── Load model ────────────────────────────────────────────────────
 @st.cache_resource(show_spinner=False)
@@ -153,6 +152,48 @@ def load_model():
     return None
 
 model = load_model()
+
+
+# ── Harden: sync the UI to the live model so ranges can never drift ──
+def sync_meta_to_model(m):
+    """Overwrite each gene's default / min / max / coef / role directly
+    from the model's own StandardScaler (mean_, scale_) and estimator
+    (coef_). This guarantees the sliders and the model always agree, even
+    if the pkl is retrained or swapped. The hardcoded GENE_META values
+    below act only as a fallback when the model file is missing.
+
+    default = training mean      (slider sits at a true neutral point)
+    min/max = mean ± 3 SD        (no value the model never saw)
+    coef    = model coefficient  (SHAP bars match the real prediction)
+    role    = protective if coef > 0 else harmful
+    """
+    if m is None:
+        return False
+    try:
+        scaler = m[0]
+        est    = m[-1]
+        means  = np.ravel(scaler.mean_)
+        sds    = np.ravel(scaler.scale_)
+        coefs  = np.ravel(est.coef_)
+    except Exception:
+        return False
+    for i, p in enumerate(GENE_ORDER):
+        mu = float(means[i])
+        sd = float(max(sds[i], 1e-6))
+        cf = float(coefs[i])
+        GENE_META[p]["default"] = round(mu, 2)
+        GENE_META[p]["min_val"] = round(mu - 3.0 * sd, 2)
+        GENE_META[p]["max_val"] = round(mu + 3.0 * sd, 2)
+        GENE_META[p]["coef"]    = round(cf, 4)
+        GENE_META[p]["role"]    = "protective" if cf > 0 else "harmful"
+    return True
+
+
+MODEL_SYNCED = sync_meta_to_model(model)
+
+COHORT_MEANS = {p: GENE_META[p]["default"] for p in GENE_ORDER}
+COHORT_SDS   = {p: (GENE_META[p]["max_val"] - GENE_META[p]["min_val"]) / 6
+                for p in GENE_ORDER}
 
 
 def predict_from_expression(expr_values: list) -> dict:
@@ -216,7 +257,7 @@ def shap_bar_chart(contributions: dict) -> plt.Figure:
     ax.set_facecolor("#F9FAFC")
     genes  = list(contributions.keys())
     vals   = list(contributions.values())
-    colors = ["#E24B4A" if v < 0 else "#1B6CA8" for v in vals]
+    colors = ["#E24B4A" if v < 0 else "#1C7C5A" for v in vals]
     bars   = ax.barh(genes, vals, color=colors, alpha=0.85,
                      edgecolor="white", height=0.55)
     for bar, val in zip(bars, vals):
@@ -264,7 +305,8 @@ with st.sidebar:
     st.markdown("## 🔬 Gene Expression Input")
     st.markdown(
         "Enter log₂ RMA-normalised expression values for each probe.  \n"
-        "**Default = cohort mean** (ADNI-GO, n=96)."
+        "**Default = cohort mean** (ADNI-GO, n=96).  \n"
+        "Slider ranges span ±3 SD of the training distribution."
     )
     st.markdown("---")
 
@@ -364,13 +406,13 @@ with col1:
     st.markdown("---")
     st.markdown("#### 📖 How to interpret")
     st.markdown("""
-- **ΔMMSE < −2** → High Risk (rapid 12-month decline)
+- **ΔMMSE ≤ −2** → High Risk (rapid 12-month decline)
 - **−2 < ΔMMSE < 0** → Moderate Risk (mild decline)
 - **ΔMMSE ≥ 0** → Low Risk (stable or improving)
 
 SHAP bars show each probe's contribution:
 - **Red bars pointing left** → gene increases risk score
-- **Blue bars pointing right** → gene (SNX5) decreases risk score
+- **Green bar pointing right** → the single protective gene (SNX5) decreases risk score
 """)
 
 with col2:
