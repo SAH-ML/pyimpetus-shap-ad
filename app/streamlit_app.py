@@ -410,9 +410,11 @@ with col1:
 - **−2 < ΔMMSE < 0** → Moderate Risk (mild decline)
 - **ΔMMSE ≥ 0** → Low Risk (stable or improving)
 
-SHAP bars show each probe's contribution:
-- **Red bars pointing left** → gene increases risk score
-- **Green bar pointing right** → the single protective gene (SNX5) decreases risk score
+SHAP bars show how each probe moved this patient's prediction:
+- **Bars pointing left (red)** → that probe pushed toward decline (higher risk)
+- **Bars pointing right (green)** → that probe pushed toward stability (lower risk)
+
+A probe can switch sides depending on whether its level is above or below the cohort average. SNX5 is the protective gene, so its bar turns green only when its expression is above average; when SNX5 is low, its lost protection shows as a red bar.
 """)
 
 with col2:
